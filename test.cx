@@ -1,0 +1,59 @@
+1.0 + 2
+Foo(bar, 2)
+Foo()
+{ Foo(bar, 2) }
+{ 1.0 + 2 }
+{ Foo(bar, foo, 2, baz) }
+{ 
+    Foo(bar, 2) 
+}
+let x = 2
+let x = 2.0
+let x = "hi"
+let y = 3
+let x = y
+let x = 2 + 4
+let x = 2 + y
+let x = Func(3)
+
+{
+    let x = 4
+    let y = Fn(x)
+    x + y
+    {
+        let nested = 4
+        zzzzzzzzz + zzzzzzzzzzzzz
+    }
+}
+
+type Foo = (a : Something, b: Bla)
+type Foo2 = (a : Something, b: Bla)
+type Foo3 = (
+    a : Something
+    b: Bla
+)
+
+type Foo4 = (
+    a : Something
+)
+
+type Foo4 = ()
+
+type Bla = Foo
+
+fn Func = (a: Foo, b: Bla) -> (cat: Dog, why: That) {
+    let x = a
+    let y = b
+    {
+        x + y
+    }
+    x + y
+    Func2()
+}
+
+fn Main = (args: Array) -> U64 {
+    let x = args
+    let y = x
+    x + y
+}
+

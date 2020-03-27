@@ -1,0 +1,125 @@
+
+
+type u64 = cexpr { uint64_t } 
+type i32 = cexpr { int32_t }
+
+type Foo = (a: B, c : D)
+
+// You CANNOT pass things of type Foo to functions which take type Bar. This just says Bar has same
+// structure as Foo. Perhaps add another option like type Bar = alias Foo? 
+type Bar = Foo
+
+type Ptr<T> = cexpr { ${T} * }
+type Owned<T> = Ptr<T>
+
+
+module mem {
+
+    fn HeapAlloc<T> = (num_elements: u64) -> Ptr<T> cexpr {
+        return malloc(size * sizeof(${T})); 
+    }
+
+    fn HeapFree = (ptr: Ptr<T>) -> () cexpr {
+        free(ptr)
+    }
+}
+
+// Open questions: 
+
+
+// Function parameters are always pass by pointer. Pass by value is confusing.
+// If a function wants to take ownership of an object (e.g. because it wants to store it in some
+// internal data structure) Then it has to take by Owned<T>, which under the hood is just a ptr to T
+// but prevents compilation if the user passes in an object of just T (which is automatically ptr to
+// T). Sooooo every object T has to have a function Disown<T>(t) that converts it into an Owned<T>.
+//       A) If the object was created on the stack, Disown<T>(t) must copy it to the heap (NOPE NO MAGIC)
+//       B) If the object was created on the stack, and needs to be passed to an owning function,
+//       you have to call CopyToHeap<T>(t) which returns an Owned<T>
+
+
+module array {
+    type Array<T> = (
+        size: U64
+        data: Ptr<T>
+    )
+
+    fn Create<T> = (size: u64) -> Array<T> {
+        Array<T> { size,  mem::HeapAlloc<T>(size) }
+    }
+
+    fn Destroy<T> = (self: mut Array<T>) {
+
+    }
+
+    fn Get<T> = (self: mut Vec<T>, i: U64) -> T cexpr {
+        self.data[i]
+    }
+
+    fn GetSize<T> = (self: mut Vec<T>, i: U64) -> U64 {
+        self.size
+    }
+
+    fn Append<T> = (self: mut Vec<T>, T ele) -> () {}
+
+   fn Get<T> = (self: mut Vec<T>, i: U64) -> T {
+        self.data[i]
+    }
+
+    fn GetSize<T> = (self: mut Vec<T>, i: U64) -> U64 {
+        self.size
+    }
+
+    fn Append<T> = (self: mut Vec<T>, T ele) -> () {}
+
+}
+
+enum Foo = (
+    Identifier
+    OtherIdentifier
+    OtherThing 
+)
+
+module vector { 
+    type Vec<T> = (
+        size: U64
+        data: Array<T>
+    )
+
+    fn Create<T> = (size: U64, init_val: T) -> Vec<T> {
+        let data: Array<T> = array::Create<T>(size)
+
+        for (let i: U64 = 0; i < size; ++i) {
+            data[i] = init_val
+        }
+
+//        ForEach<Array<T>, (init_val: T)>(data, {init_val}, 
+//            (t: T) -> () {
+//            data[i] = init_val 
+//        })
+
+        Vec<T> {size, data}
+    }
+
+    fn Get<T> = (self: mut Vec<T>, i: U64) -> T {
+        self.data[i]
+    }
+
+    fn GetSize<T> = (self: mut Vec<T>, i: U64) -> U64 {
+        self.size
+    }
+
+    fn Append<T> = (self: mut Vec<T>, T ele) -> () {}
+}
+
+// How does caller specify return type... it'd have to be deduced? or i guess typed parameter pack
+// type thing?
+fn ReturnsStuff = (x : U64) -> (x: U64, x_squared: U64, x_cubed: U64) {
+    { x, x*x, x*x*x }
+}
+
+fn Main = (a : B) -> I { 
+    let v =  vector::Create<U64>{ 10, 0 };
+    let size = GetSize(v)
+
+    let {x, x2, x3} = ReturnsStuff(1)
+}

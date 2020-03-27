@@ -1,0 +1,61 @@
+
+
+// Constant atoms
+integer = @{ "_"? ~ ASCII_DIGIT+ }
+decimal = @{ "_"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
+string = @{ "\"" ~ ( "''" | (!"\"" ~ ANY) )* ~ "\"" }
+constant = { (decimal | integer | string) }
+
+// Symbolic atoms
+varname = @{ ASCII_ALPHA_LOWER ~ (ASCII_ALPHANUMERIC | "_")* }
+fnname = @{ ASCII_ALPHA_UPPER ~ ASCII_ALPHANUMERIC* }
+symbol = { (varname | fnname) }
+
+atom = { (constant | symbol) }
+
+
+// Infix operators
+plus = { "+" }
+minus = { "-" }
+infixop = { ( plus | minus ) }
+
+WHITESPACE = _{ (" ") }
+
+atomlist = { atom ~ ("," ~ atom)* } 
+
+infixexpr = { atom ~ infixop ~ atom }
+prefixexpr = { fnname ~ "(" ~ atomlist? ~ ")" }
+valexpr = { (infixexpr | prefixexpr) }
+
+assignexpr = { "let " ~ varname ~ "=" ~ (valexpr | atom) }
+
+expr = { (valexpr | assignexpr) } 
+
+blockexpr = { "{" ~ NEWLINE* ~ (blockexpr|expr) ~ (NEWLINE+ ~ (blockexpr|expr))* ~ NEWLINE* ~ "}" }
+
+alpha = { 'a'..'z' | 'A'..'Z' }
+digit = { '0'..'9' }
+
+ident = @{ (alpha | digit | "_")+ }
+
+comment = { "//" ~ (ASCII_ALPHANUMERIC | PUNCTUATION) ~ "\n" }
+
+ws = { (" " | "\n") }
+
+typename = @{ ASCII_ALPHA_UPPER ~ ASCII_ALPHANUMERIC* }
+typedvar = { varname ~ ":" ~ typename }
+typelist = { "(" ~ NEWLINE* ~ typedvar? ~ ((","|NEWLINE) ~ typedvar)* ~ NEWLINE* ~ ")" }
+
+namedtypelist = { "type " ~ typename ~ "=" ~ typelist }
+
+typealias = { "type " ~ ident ~ "=" ~ ident }
+
+ctypealias = { "type " ~ ident ~ "=" ~ "c#" ~ ident }
+
+function = { "fn " ~ fnname ~ "=" ~ typelist ~ "->" ~ (typename | typelist) ~ blockexpr}
+
+cfunction = { "fn" ~ ident ~ "=" ~ typelist ~ "->" ~ (ident | typelist) ~ "c#" ~ blockexpr}
+
+stmt = _{ (blockexpr | expr | namedtypelist | typealias | function) } //  | | ctypealias | typealias  | function | comment) }
+
+program = _{ SOI ~ "\n"* ~ (stmt ~ "\n"+) * ~ stmt? ~ EOI }

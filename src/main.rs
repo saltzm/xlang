@@ -11,10 +11,7 @@ use std::vec::Vec;
 #[grammar = "cx.pest"]
 pub struct CxParser;
 
-#[derive(Debug)]
-pub enum InfixOperator {}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AstNode {
     Plus,
     Minus,
@@ -57,7 +54,7 @@ pub enum AstNode {
         output_parameters: Box<AstNode>,
         body: Box<AstNode>,
     },
-    EndOfInput
+    EndOfInput,
 }
 
 pub struct Enum {}
@@ -197,16 +194,6 @@ pub struct Scope {
     vars: HashMap<String, Variable>,
 }
 
-//impl Clone for Scope {
-//    fn clone(self: &Scope) -> Scope {
-//        return Scope { vars: self.vars.clone() };
-//    }
-//}
-
-pub struct PrefixOp {
-    opname: String,
-    input_arguments: Vec<(String, String)>,
-}
 
 //pub fn parse_valexpr(scope: &Scope, mut valexpr: pest::iterators::Pairs<Rule>) -> String {
 //    println!("found variable assign valexpr: {:?}", valexpr.as_str());
@@ -315,6 +302,86 @@ pub fn parse_list(stmt: pest::iterators::Pairs<Rule>) -> Vec<Box<AstNode>> {
         .collect::<Vec<Box<AstNode>>>();
 }
 
+pub fn ast_list_to_c(list: Vec<Box<AstNode>>) -> Vec<String> {
+    return list
+        .iter()
+        .map(|node| -> String {
+            // TODO get rid of clone...
+            // TODO Assuming no list types have lists as elements... i think that's safe? but hacky
+            // anyways.
+            return ast_to_c(node.clone()).join("");
+        })
+        .collect::<Vec<String>>();
+} 
+
+pub fn get_type() -> String {
+    return String::from("ThisAintNoType");
+}
+
+pub fn ast_to_c(node: Box<AstNode>) -> Vec<String> {
+    match *node {
+        AstNode::Plus => return vec![String::from("+")],
+        AstNode::Minus => return vec![String::from("-")],
+        AstNode::Multiply => return vec![String::from("*")],
+        AstNode::Divide => return vec![String::from("/")],
+        // Non-decomposable
+        AstNode::Identifier(s) => return vec![s],
+        AstNode::Integer(s) => return vec![s],
+        AstNode::Decimal(s) => return vec![s],
+        AstNode::StringLiteral(s) => return vec![s],
+
+        // Decomposable
+        AstNode::Constant(node) => return ast_to_c(node),
+        AstNode::PostfixExpression {
+            operator,
+            argument_list,
+        } => {
+            return vec![format!("{:} ({:})", operator, ast_to_c(argument_list).join(", "))];
+        }
+        AstNode::InfixExpression {
+            left,
+            operator,
+            right,
+        } => {
+            return vec![format!(
+                "{:} {:} {:}",
+                ast_to_c(left).join(""),
+                ast_to_c(operator).join(""),
+                ast_to_c(right).join("")
+            )];
+        }
+        // TODO this is going to be harder than anticipated, since BlockExpressions can return
+        // stuff
+        AstNode::BlockExpression(list) => {
+            return vec![format!("{{\n    {:};\n}}", ast_list_to_c(list).join(";\n    "))]
+        }
+        AstNode::ArgumentExpressionList(list) => {
+            return ast_list_to_c(list);
+        }
+        AstNode::VariableDeclaration { name, value } => {
+            return vec![format!("{:} {:} = {:};", get_type(), name, ast_to_c(value).join(""))]
+        }
+        AstNode::TypedVariable { name, typ } => {
+            return vec![format!("{:} {:}", typ, name)];
+        }
+        AstNode::TypedVariableList(list) => return ast_list_to_c(list),
+        AstNode::TypeDeclaration { name, fields } => {
+            return vec![format!("typedef struct {:} {{\n    {:}; \n}} {:};", name, ast_to_c(fields).join(";\n    "), name)];
+        }
+        AstNode::FunctionDeclaration {
+            name,
+            input_parameters,
+            output_parameters,
+            body,
+        } => {
+            return vec![format!("{:} {:} ({:}) {:};", get_type(), name, ast_to_c(input_parameters).join(", "), ast_to_c(body).join(""))];
+        }
+        AstNode::EndOfInput => {
+            return vec![String::from("")];
+        }
+    }
+}
+
 pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
     //println!("found stmt: {:?}", stmt);
     let rule = stmt.as_rule();
@@ -374,7 +441,7 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
                 body: Box::new(parse(inner.next().unwrap())),
             };
         }
-        Rule::EOI => return AstNode::EndOfInput,  // TODO
+        Rule::EOI => return AstNode::EndOfInput, // TODO
         // Silent rules
         Rule::COMMENT => unreachable!(),
         Rule::WHITESPACE => unreachable!(),
@@ -405,4 +472,7 @@ fn main() {
 
     let ast = parse_list(file);
     println!("{:#?}", ast);
+    for sub in ast {
+        println!("{:}", ast_to_c(sub).join("\n"));
+    }
 }

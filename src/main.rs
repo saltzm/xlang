@@ -375,8 +375,8 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
             };
         }
         Rule::EOI => return AstNode::EndOfInput,  // TODO
-        Rule::COMMENT => unreachable!(),
         // Silent rules
+        Rule::COMMENT => unreachable!(),
         Rule::WHITESPACE => unreachable!(),
         Rule::Expression => unreachable!(),
         Rule::Statement => unreachable!(),
@@ -384,11 +384,9 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
     }
 }
 
-pub fn print_ast_node() {}
-
 fn main() {
     let unparsed_file = fs::read_to_string("test.cx").expect("cannot read file");
-    let file = CxParser::parse(Rule::Program, &unparsed_file).expect("unsuccessful parse"); // unwrap the parse result
+    let file = CxParser::parse(Rule::Program, &unparsed_file).expect("unsuccessful parse");
 
     let mut _program = Program {
         base_module: Module {
@@ -405,16 +403,6 @@ fn main() {
         vars: HashMap::new(),
     };
 
-    let ast = file
-        .map(|stmt| {
-            return parse(stmt);
-        })
-        .collect::<Vec<AstNode>>();
-
+    let ast = parse_list(file);
     println!("{:#?}", ast);
-
-    //   let successful_parse = CxParser::parse(Rule::typelist, "(a: U64, b: String)");
-
-    //   let unsuccessful_parse = CxParser::parse(Rule::function, "fn Add = (a: u64, b: u64) -> u64 { a + b }");
-    //   println!("{:?}", unsuccessful_parse);
 }

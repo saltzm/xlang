@@ -1,61 +1,83 @@
-
-
-// Constant atoms
-integer = @{ "_"? ~ ASCII_DIGIT+ }
-decimal = @{ "_"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
-string = @{ "\"" ~ ( "''" | (!"\"" ~ ANY) )* ~ "\"" }
-constant = { (decimal | integer | string) }
-
-// Symbolic atoms
-varname = @{ ASCII_ALPHA_LOWER ~ (ASCII_ALPHANUMERIC | "_")* }
-fnname = @{ ASCII_ALPHA_UPPER ~ ASCII_ALPHANUMERIC* }
-symbol = { (varname | fnname) }
-
-atom = { (constant | symbol) }
-
-
-// Infix operators
-plus = { "+" }
-minus = { "-" }
-infixop = { ( plus | minus ) }
-
 WHITESPACE = _{ (" ") }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* }
 
-atomlist = { atom ~ ("," ~ atom)* } 
+Plus = { "+" }
+Minus = { "-" }
+Multiply = { "*" }
+Divide = { "/" }
 
-infixexpr = { atom ~ infixop ~ atom }
-prefixexpr = { fnname ~ "(" ~ atomlist? ~ ")" }
-valexpr = { (infixexpr | prefixexpr) }
+InfixOperator = _{
+    ( Plus
+    | Minus
+    | Multiply
+    | Divide
+    )
+}
 
-assignexpr = { "let " ~ varname ~ "=" ~ (valexpr | atom) }
+// TODO separate var/fn?
+Identifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
 
-expr = { (valexpr | assignexpr) } 
+Integer = @{ "-"? ~ ASCII_DIGIT+ }
+Decimal = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
+StringLiteral = @{ "\"" ~ ( "''" | (!"\"" ~ ANY) )* ~ "\"" }
+Constant = { (Decimal | Integer | StringLiteral) }
 
-blockexpr = { "{" ~ NEWLINE* ~ (blockexpr|expr) ~ (NEWLINE+ ~ (blockexpr|expr))* ~ NEWLINE* ~ "}" }
+PrimaryExpression =
+    {( Constant 
+    |  Identifier 
+    |  "(" ~ PrimaryExpression ~ ")"
+    )} 
 
-alpha = { 'a'..'z' | 'A'..'Z' }
-digit = { '0'..'9' }
+PostfixExpression = 
+    { Identifier ~ "(" ~ ArgumentExpressionList ~ ")" }
 
-ident = @{ (alpha | digit | "_")+ }
+InfixExpression = 
+    { PrimaryExpression ~ InfixOperator ~ Expression }
 
-comment = { "//" ~ (ASCII_ALPHANUMERIC | PUNCTUATION) ~ "\n" }
+// TODO: Clean this up somehow... 
+BlockExpression =
+     { "{" ~ 
+        // This is like this because otherwise the greedy algorithm
+        // will never move on to expect the last expression.
+         (!(NEWLINE* ~ Expression ~ NEWLINE* ~ "}") ~ 
+            NEWLINE* ~ (VariableDeclaration | Expression))* ~ NEWLINE* ~ 
+           Expression ~ NEWLINE*
+       ~ "}"
+     }
 
-ws = { (" " | "\n") }
+// An Expression is anything that returns a value
+Expression = 
+    _{( InfixExpression 
+    |   PostfixExpression
+    |   PrimaryExpression
+    |   BlockExpression
+    )}
 
-typename = @{ ASCII_ALPHA_UPPER ~ ASCII_ALPHANUMERIC* }
-typedvar = { varname ~ ":" ~ typename }
-typelist = { "(" ~ NEWLINE* ~ typedvar? ~ ((","|NEWLINE) ~ typedvar)* ~ NEWLINE* ~ ")" }
+ArgumentExpressionList = 
+    { Expression? ~ ("," ~ Expression)* }
 
-namedtypelist = { "type " ~ typename ~ "=" ~ typelist }
+VariableDeclaration = 
+    { "let " ~ Identifier ~ "=" ~ Expression }
 
-typealias = { "type " ~ ident ~ "=" ~ ident }
+TypedVariable = 
+    { Identifier ~ ":" ~ Identifier }
 
-ctypealias = { "type " ~ ident ~ "=" ~ "c#" ~ ident }
+TypedVariableList = 
+    { "(" ~ NEWLINE* ~ TypedVariable ? ~ ((","|NEWLINE+) ~ TypedVariable)* ~ NEWLINE* ~ ")" }
 
-function = { "fn " ~ fnname ~ "=" ~ typelist ~ "->" ~ (typename | typelist) ~ blockexpr}
+TypeDeclaration = 
+    {"type " ~ Identifier ~ "=" ~ (TypedVariableList|Identifier) }
 
-cfunction = { "fn" ~ ident ~ "=" ~ typelist ~ "->" ~ (ident | typelist) ~ "c#" ~ blockexpr}
+FunctionDeclaration = 
+    { "fn" ~ Identifier ~ "=" ~ TypedVariableList ~ "->" ~ 
+                                 (TypedVariableList|Identifier) ~ 
+                                BlockExpression
+    }
 
-stmt = _{ (blockexpr | expr | namedtypelist | typealias | function) } //  | | ctypealias | typealias  | function | comment) }
+Statement = 
+    _{( FunctionDeclaration
+     |  VariableDeclaration 
+     |  TypeDeclaration 
+     |  Expression) }
 
-program = _{ SOI ~ "\n"* ~ (stmt ~ "\n"+) * ~ stmt? ~ EOI }
+Program = _{ SOI ~ "\n"* ~ (Statement ~ "\n"+) * ~ Statement? ~ EOI }

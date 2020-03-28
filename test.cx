@@ -37,6 +37,7 @@ type Foo4 = (
     a : Something
 )
 
+// This is a comment
 type Foo4 = ()
 
 type Bla = Foo
@@ -46,6 +47,13 @@ fn Func = (a: Foo, b: Bla) -> (cat: Dog, why: That) {
     let y = b
     {
         x + y
+        {
+            let a = 4.0
+            let b = a
+            2.0 // TODO this needs to be here because currently "block statement" isn't a thing /
+                // because BlockExpression has to end in an expression. But maybe that enforcement
+                // should happen in the compiler to allow "void" block expressions?
+        }
     }
     x + y
     Func2()
@@ -56,4 +64,3 @@ fn Main = (args: Array) -> U64 {
     let y = x
     x + y
 }
-

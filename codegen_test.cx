@@ -16,6 +16,11 @@ fn Print = (s : MyStruct) -> () {
     0
 }
 
+fn PrintSubfield = (a: int) -> () {
+    printf("a: %d\n", a)
+    0
+}
+
 // First going to get returning from functions working...
 // Then going to make structs work?
 
@@ -23,7 +28,9 @@ fn main = () -> int {
     let x = "hello world"
 
     let y : MyStruct = (2, 3)
+
     Print(y)
+    PrintSubfield(y.a)
 
     // How does this mesh with casting? (Which is important for numerical stuff)
     // This is my fave - matches the declaration, also matches the way you pass to functions....

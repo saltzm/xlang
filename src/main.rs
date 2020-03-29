@@ -32,7 +32,7 @@ pub enum AstNode {
     },
     StructFieldAccessExpression {
         field: String,
-        subfields: Box<AstNode>
+        subfields: Box<AstNode>,
     },
     InfixExpression {
         left: Box<AstNode>,
@@ -68,7 +68,7 @@ pub struct Enum {}
 
 pub struct Struct {
     name: String,
-    fields: HashMap<String, String>
+    fields: HashMap<String, String>,
 }
 
 pub struct Function {
@@ -153,10 +153,7 @@ pub fn ast_to_c(program_metadata: &Program, scope: &mut Scope, node: Box<AstNode
                 ast_to_c(program_metadata, scope, argument_list).join(", ")
             )];
         }
-        AstNode::StructFieldAccessExpression {
-            field,
-            subfields,
-        } => {
+        AstNode::StructFieldAccessExpression { field, subfields } => {
             return vec![format!(
                 "{:}.{:}",
                 field,
@@ -266,10 +263,12 @@ pub fn build_program_metadata(program_metadata: &mut Program, node: Box<AstNode>
 
             let output_type: String = match *output_parameters {
                 AstNode::TypeIdentifier(s) => String::from(s),
-                AstNode::TypedVariableList(list) => if list.is_empty() {
-                    String::from("void")
-                } else {
-                    String::from("AnonymousStruct") // TODO make_anon_struct(list),
+                AstNode::TypedVariableList(list) => {
+                    if list.is_empty() {
+                        String::from("void")
+                    } else {
+                        String::from("AnonymousStruct") // TODO make_anon_struct(list),
+                    }
                 }
                 _ => unreachable!(),
             };
@@ -285,7 +284,7 @@ pub fn build_program_metadata(program_metadata: &mut Program, node: Box<AstNode>
         }
         AstNode::TypeDeclaration { name, fields } => {
             let fields = match *fields {
-                AstNode::TypedVariableList(list) => { 
+                AstNode::TypedVariableList(list) => {
                     let fields = list
                         .iter()
                         .map(|var| {
@@ -300,21 +299,21 @@ pub fn build_program_metadata(program_metadata: &mut Program, node: Box<AstNode>
                         let _ = field_map.insert(name, typ);
                     }
                     field_map
-                },
+                }
                 AstNode::TypeIdentifier(s) => match program_metadata.base_module.structs.get(&s) {
                     Some(t) => t.fields.clone(),
-                    None => panic!("Cannot create type alias for type that is not defined: {:}", s),
-                }
+                    None => panic!(
+                        "Cannot create type alias for type that is not defined: {:}",
+                        s
+                    ),
+                },
                 _ => unreachable!(),
             };
 
-            let _ = program_metadata.base_module.structs.insert(
-                name.clone(),
-                Struct {
-                    name,
-                    fields,
-                },
-            );
+            let _ = program_metadata
+                .base_module
+                .structs
+                .insert(name.clone(), Struct { name, fields });
         }
         _ => (),
     }
@@ -340,21 +339,23 @@ pub fn resolve_expr_type(
             Some(func) => return func.output_type.clone(),
             None => panic!("Function not found: {:}", operator),
         },
-        AstNode::StructFieldAccessExpression {
-            field,
-            subfields,
-        } => {
-            let struct_type =
-                match scope.vars.get(&field) {
-                    Some(var) => var.typ.clone(),
-                    None => panic!("Variable is not defined: {}", field),
-                };
-            let struct_fields = program_metadata.base_module.structs
-                .get(&struct_type).expect("no such struct").fields.clone();
+        AstNode::StructFieldAccessExpression { field, subfields } => {
+            let struct_type = match scope.vars.get(&field) {
+                Some(var) => var.typ.clone(),
+                None => panic!("Variable is not defined: {}", field),
+            };
+            let struct_fields = program_metadata
+                .base_module
+                .structs
+                .get(&struct_type)
+                .expect("no such struct")
+                .fields
+                .clone();
             let mut struct_scope = Scope {
                 vars: HashMap::new(),
             };
             for (name, typ) in struct_fields {
+                println!("inserting {:}", name);
                 struct_scope.vars.insert(
                     name.clone(),
                     Variable {
@@ -366,7 +367,7 @@ pub fn resolve_expr_type(
             }
 
             return resolve_expr_type(program_metadata, &mut struct_scope, subfields);
-        },
+        }
         AstNode::InfixExpression {
             left,
             operator,
@@ -451,10 +452,9 @@ pub fn deduce_variable_types(
                 )),
             }
         }
-        AstNode::StructFieldAccessExpression {
-            field,
-            subfields,
-        } => AstNode::StructFieldAccessExpression { field, subfields },
+        AstNode::StructFieldAccessExpression { field, subfields } => {
+            AstNode::StructFieldAccessExpression { field, subfields }
+        }
         AstNode::InfixExpression {
             left,
             operator,
@@ -537,7 +537,11 @@ pub fn deduce_variable_types(
             return AstNode::TypedVariable { name, typ };
         }
         AstNode::TypedVariableList(list) => {
-            return AstNode::TypedVariableList(list);
+            return AstNode::TypedVariableList(deduce_variable_types_list(
+                program_metadata,
+                scope,
+                list,
+            ));
         }
         AstNode::TypeDeclaration { name, fields } => {
             return AstNode::TypeDeclaration { name, fields }

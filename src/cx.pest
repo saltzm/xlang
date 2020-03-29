@@ -17,13 +17,7 @@ InfixOperator = _{
 // TODO separate var/fn?
 
 VariableIdentifier = 
-    @{ (
-//        // Field accessor for struct
-//        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* ~ "." ~ 
-//        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* |
-        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")*   
-        )
-    }
+    @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 
 TypeIdentifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
 FunctionIdentifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
@@ -43,7 +37,7 @@ PostfixExpression =
     { FunctionIdentifier ~ "(" ~ ArgumentExpressionList ~ ")" }
 
 StructFieldAccessExpression = 
-    { TypeIdentifier ~ "." ~ (StructFieldAccessExpression | TypeIdentifier) }
+    { VariableIdentifier ~ "." ~ (StructFieldAccessExpression | VariableIdentifier) }
 
 InfixExpression = 
     { PrimaryExpression ~ InfixOperator ~ Expression }

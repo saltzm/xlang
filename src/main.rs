@@ -685,7 +685,7 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
 }
 
 fn main() {
-    let unparsed_file = fs::read_to_string("test.cx").expect("cannot read file");
+    let unparsed_file = fs::read_to_string("codegen_test.cx").expect("cannot read file");
     let file = CxParser::parse(Rule::Program, &unparsed_file).expect("unsuccessful parse");
 
     let mut program_metadata = Program {

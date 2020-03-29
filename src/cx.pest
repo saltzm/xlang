@@ -15,7 +15,18 @@ InfixOperator = _{
 }
 
 // TODO separate var/fn?
-Identifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
+
+VariableIdentifier = 
+    @{ (
+//        // Field accessor for struct
+//        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* ~ "." ~ 
+//        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* |
+        ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")*   
+        )
+    }
+
+TypeIdentifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
+FunctionIdentifier = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "_")* }
 
 Integer = @{ "-"? ~ ASCII_DIGIT+ }
 Decimal = @{ "-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
@@ -24,12 +35,15 @@ Constant = { (Decimal | Integer | StringLiteral) }
 
 PrimaryExpression =
     {( Constant 
-    |  Identifier 
+    |  VariableIdentifier 
     |  "(" ~ PrimaryExpression ~ ")"
     )} 
 
 PostfixExpression = 
-    { Identifier ~ "(" ~ ArgumentExpressionList ~ ")" }
+    { FunctionIdentifier ~ "(" ~ ArgumentExpressionList ~ ")" }
+
+StructFieldAccessExpression = 
+    { TypeIdentifier ~ "." ~ (StructFieldAccessExpression | TypeIdentifier) }
 
 InfixExpression = 
     { PrimaryExpression ~ InfixOperator ~ Expression }
@@ -40,7 +54,7 @@ BlockExpression =
         // This is like this because otherwise the greedy algorithm
         // will never move on to expect the last expression.
          (!(NEWLINE* ~ Expression ~ NEWLINE* ~ "}") ~ 
-            NEWLINE* ~ (VariableDeclaration | Expression))* ~ NEWLINE* ~ 
+            NEWLINE* ~ (VariableDeclaration | TypedVariableDeclaration | Expression))* ~ NEWLINE* ~ 
            Expression ~ NEWLINE*
        ~ "}"
      }
@@ -49,6 +63,7 @@ BlockExpression =
 Expression = 
     _{( InfixExpression 
     |   PostfixExpression
+    |   StructFieldAccessExpression
     |   PrimaryExpression
     |   BlockExpression
     )}
@@ -57,25 +72,29 @@ ArgumentExpressionList =
     { Expression? ~ ("," ~ Expression)* }
 
 VariableDeclaration = 
-    { "let " ~ Identifier ~ "=" ~ Expression }
+    { "let " ~ VariableIdentifier ~ "=" ~ Expression }
+
+TypedVariableDeclaration = 
+    { "let " ~ VariableIdentifier ~ ":" ~ TypeIdentifier ~ "=" ~ 
+        (Expression|"(" ~ ArgumentExpressionList ~ ")") }
 
 TypedVariable = 
-    { Identifier ~ ":" ~ Identifier }
+    { VariableIdentifier ~ ":" ~ TypeIdentifier }
 
 TypedVariableList = 
     { "(" ~ NEWLINE* ~ TypedVariable ? ~ ((","|NEWLINE+) ~ TypedVariable)* ~ NEWLINE* ~ ")" }
 
 TypeDeclaration = 
-    {"type " ~ Identifier ~ "=" ~ (TypedVariableList|Identifier) }
+    {"type " ~ TypeIdentifier ~ "=" ~ (TypedVariableList|TypeIdentifier) }
 
 FunctionDeclaration = 
-    { "fn" ~ Identifier ~ "=" ~ TypedVariableList ~ "->" ~ 
-                                 (TypedVariableList|Identifier) ~ 
-                                BlockExpression
+    { "fn" ~ FunctionIdentifier ~ "=" ~ TypedVariableList ~ "->" ~ 
+                                        (TypedVariableList|TypeIdentifier) ~ BlockExpression
     }
 
 Statement = 
     _{( FunctionDeclaration
+     |  TypedVariableDeclaration
      |  VariableDeclaration 
      |  TypeDeclaration 
      |  Expression) }

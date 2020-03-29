@@ -9,4 +9,11 @@ Open questions:
 * Do I want to allow named struct as input parameter that does unpacking? E.g. 
     fn Foo = Bar -> Baz { /* ... */ }
     where Bar is some type Bar = (a : A, b: B) and then the function receives a/b as inputs
+* Constant  ?
+* enum? 
+* var/val vs. let and let mut
+* can i get away without variable reassignment
+* Assignments as expressions?
+
+
 

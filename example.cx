@@ -12,6 +12,20 @@ type Bar = Foo
 type Ptr<T> = cexpr { ${T} * }
 type Owned<T> = Ptr<T>
 
+// Struct with default values as compile time map?
+type Countries = (
+    us: String = "United States"
+    france: String = "France" 
+)
+    // Make integer division op diff from float?
+    let x = 2 / 5
+
+    let x = MakeOnStack<MyStruct>(2, 3) // Stack
+
+    let y = OnHeap<MyStruct>(2, 3)
+    let z = OnHeap<MyStruct>(2, 3)
+
+    let x = mem::<MyStruct>(2, 3)
 
 module mem {
 

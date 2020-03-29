@@ -6,6 +6,7 @@ type MyStruct = (
 )
 
 fn main = () -> int {
-    let x = 0
+    let x = "hello world"
+    printf("%s\n", x)
     x
 }

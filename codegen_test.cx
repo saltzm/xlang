@@ -6,5 +6,6 @@ type MyStruct = (
 )
 
 fn main = () -> int {
-    0
+    let x = 0
+    x
 }

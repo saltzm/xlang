@@ -593,4 +593,10 @@ fn main() {
         return ast_to_c(&mut scope, sub.clone()).join("\n");
     }).collect::<Vec<String>>().join("\n");
     fs::write("main.c", c_program).unwrap();
+    use std::process::Command;
+    let output = Command::new("gcc")
+            .arg("main.c")
+            .output()
+            .expect("failed to execute process");
+    println!("{:#?}", output);
 }

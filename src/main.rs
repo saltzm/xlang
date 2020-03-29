@@ -114,10 +114,6 @@ pub fn ast_list_to_c(scope: &mut Scope, list: Vec<Box<AstNode>>) -> Vec<String> 
         .collect::<Vec<String>>();
 }
 
-pub fn get_type() -> String {
-    return String::from("ThisAintNoType");
-}
-
 pub fn ast_to_c(scope: &mut Scope, node: Box<AstNode>) -> Vec<String> {
     match *node {
         AstNode::Plus => return vec![String::from("+")],
@@ -352,7 +348,12 @@ pub fn deduce_variable_types(
         AstNode::Multiply => *node,
         AstNode::Divide => *node,
         // Non-decomposable
-        AstNode::Identifier(_) => *node,
+        AstNode::Identifier(s) => {
+            match scope.vars.get(&s) {
+                Some(_) => AstNode::Identifier(s),
+                None => panic!(format!("Variable is not defined: {:}", s))
+            }
+        } 
         AstNode::Integer(_) => *node,
         AstNode::Decimal(_) => *node,
         AstNode::StringLiteral(_) => *node,
@@ -557,7 +558,7 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
 }
 
 fn main() {
-    let unparsed_file = fs::read_to_string("test.cx").expect("cannot read file");
+    let unparsed_file = fs::read_to_string("codegen_test.cx").expect("cannot read file");
     let file = CxParser::parse(Rule::Program, &unparsed_file).expect("unsuccessful parse");
 
     let mut program_metadata = Program {
@@ -588,15 +589,8 @@ fn main() {
 
     println!("{:#?}", new_ast);
 
-    //    let mut ast_with_anon_structs = ast.clone();
-    //    for sub in ast {
-    //        match resolve_anonymous_struct(sub) {
-    //            Some(s) => ast_with_anon_structs.push(s),
-    //            None => ()
-    //        }
-    //    }
-
-    for sub in new_ast {
-        println!("{:}", ast_to_c(&mut scope, sub).join("\n"));
-    }
+    let c_program = new_ast.iter().map(|sub| {
+        return ast_to_c(&mut scope, sub.clone()).join("\n");
+    }).collect::<Vec<String>>().join("\n");
+    fs::write("main.c", c_program).unwrap();
 }

@@ -1,0 +1,10 @@
+
+
+type MyStruct = (
+    a: int
+    b: int
+)
+
+fn main = () -> int {
+    0
+}

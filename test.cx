@@ -1,8 +1,11 @@
 1.0 + 2
+let bar = 3
 Foo(bar, 2)
 Foo()
 { Foo(bar, 2) }
 { 1.0 + 2 }
+let foo = "hi"
+let baz = 2334.000
 { Foo(bar, foo, 2, baz) }
 { 
     Foo(bar, 2) 
@@ -26,7 +29,7 @@ fn Fn = (a: A) -> B {
     x + y
     {
         let nested = 4
-        zzzzzzzzz + zzzzzzzzzzzzz
+        nested + nested
     }
 }
 
@@ -46,9 +49,15 @@ type Foo4 = ()
 
 type Bla = Foo
 
+fn SomeFunc = () -> Foo {
+    let bla = 4
+    bla
+}
+
 fn Func = (a: Foo, b: Bla) -> (cat: Dog, why: That) {
     let x = a
     let y = b
+    let z = SomeFunc()
     {
         x + y
         let block_res = {

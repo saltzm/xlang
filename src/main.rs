@@ -39,7 +39,10 @@ pub enum AstNode {
         operator: Box<AstNode>,
         right: Box<AstNode>,
     },
-    BlockExpression(Vec<Box<AstNode>>),
+    BlockExpression{
+        body: Vec<Box<AstNode>>,
+        result_type: Option<String>
+    },
     ArgumentExpressionList(Vec<Box<AstNode>>),
     VariableDeclaration {
         name: String,
@@ -119,10 +122,13 @@ pub fn ast_list_to_c(
     return list
         .iter()
         .map(|node| -> String {
-            // TODO get rid of clone...
-            // TODO Assuming no list types have lists as elements... i think that's safe? but hacky
-            // anyways.
-            return ast_to_c(program_metadata, scope, node.clone()).join("");
+            match *node.clone() {
+                // TODO hack
+                AstNode::ArgumentExpressionList(_) =>
+                    return ast_to_c(program_metadata, scope, node.clone()).join(", "),
+                _ => 
+                    return ast_to_c(program_metadata, scope, node.clone()).join("")
+            }
         })
         .collect::<Vec<String>>();
 }
@@ -174,11 +180,23 @@ pub fn ast_to_c(program_metadata: &Program, scope: &mut Scope, node: Box<AstNode
         }
         // TODO this is going to be harder than anticipated, since BlockExpressions can return
         // stuff
-        AstNode::BlockExpression(list) => {
-            return vec![format!(
-                "{{\n    {:};\n}}",
-                ast_list_to_c(program_metadata, scope, list).join(";\n    ")
-            )]
+        AstNode::BlockExpression{body, result_type} => {
+            let subexprs = ast_list_to_c(program_metadata, scope, body);
+            match result_type {
+                Some(t) => {
+                    let main_block = format!(
+                        "{{\n    {:};\n",
+                        &subexprs[..subexprs.len()-1].join(";\n    ")
+                    );
+
+                    return vec![format!("{:}\treturn {:};\n}}", main_block, subexprs.last().unwrap())]
+                }
+                None => return vec![
+                    format!(
+                        "{{\n    {:};\n}}",
+                        &subexprs.join(";\n    ")
+                    )]
+            }
         }
         AstNode::ArgumentExpressionList(list) => {
             return ast_list_to_c(program_metadata, scope, list);
@@ -388,18 +406,17 @@ pub fn resolve_expr_type(
                 return String::from("double");
             }
         }
-        AstNode::BlockExpression(list) => {
+        AstNode::BlockExpression { body, result_type } => {
             let mut block_scope = scope.clone();
 
             // TODO CLONE ugh
-            for node in list.clone() {
+            for node in body.clone() {
                 deduce_variable_types(program_metadata, &mut block_scope, node);
             }
-
             return resolve_expr_type(
                 program_metadata,
                 &mut block_scope,
-                list.last().unwrap().clone(),
+                body.last().unwrap().clone(),
             );
         }
         _ => unreachable!(),
@@ -466,13 +483,17 @@ pub fn deduce_variable_types(
                 right: Box::new(deduce_variable_types(program_metadata, scope, right)),
             }
         }
-        AstNode::BlockExpression(list) => {
+        AstNode::BlockExpression {body, result_type} => {
             let mut block_scope: Scope = scope.clone();
-            return AstNode::BlockExpression(deduce_variable_types_list(
+            return AstNode::BlockExpression{body: deduce_variable_types_list(
                 program_metadata,
                 &mut block_scope,
-                list,
-            ));
+                body.clone(),
+            ), result_type /* TODO: Some(resolve_expr_type(
+                program_metadata,
+                &mut block_scope,
+                body.last().unwrap().clone(),
+            ))*/};
         }
         AstNode::ArgumentExpressionList(list) => {
             return AstNode::ArgumentExpressionList(deduce_variable_types_list(
@@ -490,8 +511,8 @@ pub fn deduce_variable_types(
                         _ => {
                             // TODO for struct decls, resolve_expr_type is going to come back None... or some
                             // special value "anonstruct" as a hack?
-                            let deduced_type =
-                                Some(resolve_expr_type(program_metadata, scope, value.clone()));
+                            let deduced_type = Some(
+                                resolve_expr_type(program_metadata, scope, value.clone()));
                             assert_eq!(t,
                                         deduced_type.clone().unwrap(),
                                         "Type mismatch detected for variable: name: {:}, declared type: {:}, deduced type: {:}",
@@ -553,6 +574,17 @@ pub fn deduce_variable_types(
             body,
         } => {
             let mut func_scope = scope.clone();
+            // TODO HACK
+            let new_body = match *body {
+                AstNode::BlockExpression{ body, result_type } => { 
+                     let func_output_type = program_metadata.base_module.functions.get(&name).unwrap().output_type.clone();
+                     AstNode::BlockExpression{ 
+                        body,
+                        result_type : if func_output_type == "void" {  None } else { Some(func_output_type) }
+                     }
+                },
+                _ => unreachable!()
+            };
             return AstNode::FunctionDeclaration {
                 name: name,
                 input_parameters: Box::new(deduce_variable_types(
@@ -564,7 +596,7 @@ pub fn deduce_variable_types(
                 body: Box::new(deduce_variable_types(
                     program_metadata,
                     &mut func_scope,
-                    body,
+                    Box::new(new_body),
                 )),
             };
         }
@@ -637,7 +669,7 @@ pub fn parse(stmt: pest::iterators::Pair<Rule>) -> AstNode {
                 right: Box::new(parse(inner.next().unwrap())),
             };
         }
-        Rule::BlockExpression => return AstNode::BlockExpression(parse_list(inner)),
+        Rule::BlockExpression => return AstNode::BlockExpression{body: parse_list(inner), result_type: None},
         Rule::ArgumentExpressionList => return AstNode::ArgumentExpressionList(parse_list(inner)),
         Rule::VariableDeclaration => {
             return AstNode::VariableDeclaration {

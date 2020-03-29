@@ -49,7 +49,7 @@ BlockExpression =
         // will never move on to expect the last expression.
          (!(NEWLINE* ~ Expression ~ NEWLINE* ~ "}") ~ 
             NEWLINE* ~ (VariableDeclaration | TypedVariableDeclaration | Expression))* ~ NEWLINE* ~ 
-           Expression ~ NEWLINE*
+           ( VariableDeclaration | TypedVariableDeclaration| Expression|"(" ~ ArgumentExpressionList ~ ")") ~ NEWLINE*
        ~ "}"
      }
 

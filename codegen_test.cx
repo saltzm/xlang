@@ -7,18 +7,20 @@ type MyStruct = (
     b: int
 )
 
-//fn CreateOnStack = (a: i32) -> MyStruct {
+//fn CreateOnStack = (a: int) -> MyStruct {
 //    (a, a)
 //}
 
 fn Print = (s : MyStruct) -> () {
     printf("a: %d, b: %d\n", s.a, s.b)
-    0
 }
 
-fn PrintSubfield = (a: int) -> () {
-    printf("a: %d\n", a)
-    0
+fn PrintInt = (a: int) -> () {
+    printf("int: %d\n", a)
+}
+
+fn AddTwoNumbers = (a: int, b: int) -> int {
+    a + b
 }
 
 // First going to get returning from functions working...
@@ -30,7 +32,15 @@ fn main = () -> int {
     let y : MyStruct = (2, 3)
 
     Print(y)
-    PrintSubfield(y.a)
+    PrintInt(y.a)
+    let z = AddTwoNumbers(5, 6) 
+    PrintInt(z)
+
+    printf("%s\n", x)
+    0
+}
+
+    //let z = CreateOnStack(14)
 
     // How does this mesh with casting? (Which is important for numerical stuff)
     // This is my fave - matches the declaration, also matches the way you pass to functions....
@@ -48,9 +58,5 @@ fn main = () -> int {
 //    Print(x_on_the_stack) // Use them the same way, always pointer under the hood
     //Print(x_on_the_heap)
 
-
-    printf("%s\n", x)
-    x
-}
 
 

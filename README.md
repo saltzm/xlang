@@ -1,3 +1,48 @@
+###Declaring a struct
+```rust
+// In-line requires commas
+type MyStruct = (a: String, b: Foo)
+// No commas needed!
+type Foo = (
+   a: String
+   b: Bar
+)
+```
+### Variable creation/assignment
+```rust
+// Type-deduction works most of the time
+let x = 23 // int
+let x = 2.3 // double
+let x = FnReturningFoo() // Foo
+
+// Struct creation requires type specifier
+let my_struct : MyStruct = ("hello", "world")
+// TODO: Do I like this?
+let my_struct : MyStruct = (
+   "hello" // a
+   "world" // b
+)
+// TODO: Allow struct init with field names? Leaning towards no...
+```
+### Function declaration
+```rust
+// "Add is a function from (i32, i32) to i32"
+fn Add = (a: i32, b: i32) -> i32 {
+   // No "return" required because all block expressions ({ }) can return a value
+   a + b 
+}
+
+// TODO: Consider this syntax
+let Add = fn (a: i32, b: i32) -> i32 {
+   // No "return" required because all block expressions ({ }) can return a value
+   a + b 
+}
+// And this syntax along with it
+let MyStruct = struct (
+    a: int
+    b: int
+)
+```
 
 
 Open questions:

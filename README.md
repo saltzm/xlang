@@ -1,4 +1,4 @@
-###Declaring a struct
+### Declaring a struct
 ```rust
 // In-line requires commas
 type MyStruct = (a: String, b: Foo)

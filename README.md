@@ -61,6 +61,17 @@ let MyStruct = struct (
     a: int
     b: int
 )
+
+// Or even
+let Add = (a: i32, b: i32) -> i32 {
+   // No "return" required because all block expressions ({ }) can return a value
+   a + b 
+}
+
+let MyStruct = (
+    a: int
+    b: int
+)
 ```
 
 

@@ -7,6 +7,17 @@ type Foo = (
    a: String
    b: Bar
 )
+// Create an alias
+// TODO: Decide whether this is a usual alias or whether it's a "copy", i.e. whether 
+// objects of type Bar can be passed to functions expecting type Foo, or whether this
+// Just says that Bar has the same structure as Foo but is a separate type, which I could
+// see being useful in certain cases if you want to use the type system to enforce certain
+// behaviors that don't actually influence the structure of the data. (E.g. I could imagine 
+// an "OwnedPtr" type that is actually just a pointer, but functions taking OwnedPtr should reject
+// things of type Ptr. Could maybe have both concepts as separate things maybe, but don't know 
+// how useful that is.
+type Bar = Foo
+// TODO: Consider using "struct" instead of "type" as keyword
 ```
 ### Variable creation/assignment
 ```rust
@@ -14,6 +25,14 @@ type Foo = (
 let x = 23 // int
 let x = 2.3 // double
 let x = FnReturningFoo() // Foo
+// All blocks of { } are expressions that can return something
+// TODO: type inference needs to work for this, which means it 
+// needs to work for functions as well... 
+let x = {
+   let a = 5
+   let b = 10
+   a + b
+} 
 
 // Struct creation requires type specifier
 let my_struct : MyStruct = ("hello", "world")

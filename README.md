@@ -1,3 +1,7 @@
+
+
+
+
 ### Declaring a struct
 ```rust
 // In-line requires commas
@@ -74,7 +78,6 @@ let MyStruct = (
 )
 ```
 
-
 Open questions:
 * Do I want to allow nested scopes, or should I force you to call a function?
 * Do I want to allow variable shadowing?
@@ -89,6 +92,25 @@ Open questions:
 * var/val vs. let and let mut
 * can i get away without variable reassignment
 * Assignments as expressions
+* Consider bizarre piping form of function calls, e.g. (2, 3) | Add | TimesTwo, or my_struct | GetSize
 
-
-
+Features:
+- [x] Variable assignment to constants
+- [x] Variable assignment to structs
+- [x] Struct declaration/definition
+- [x] Named function declaration/definition/usage
+- [x] Type inference for non-struct variables
+- [x] Type inference for block expression return types
+- [ ] "Official way" to include types from C
+- [ ] "Official way" to call functions from C
+- [ ] "Official way" to include libraries from C
+- [ ] Passing structs as function arguments by pointer
+- [ ] Lambdas (no captures)
+- [ ] Allocate/deallocate heap memory
+- [ ] Generics
+- [ ] Modules
+- [ ] Variable reassignment
+- [ ] defer/destructors?
+- [ ] Conditionals
+- [ ] Loops
+- [ ] Having more than one file (lol)

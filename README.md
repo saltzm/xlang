@@ -88,7 +88,7 @@ Open questions:
 * enum? 
 * var/val vs. let and let mut
 * can i get away without variable reassignment
-* Assignments as expressions?
+* Assignments as expressions
 
 
 

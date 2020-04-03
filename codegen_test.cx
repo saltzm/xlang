@@ -7,9 +7,15 @@ type MyStruct = (
     b: int
 )
 
+// TODO
 //fn CreateOnStack = (a: int) -> MyStruct {
 //    (a, a)
 //}
+
+fn CreateOnStack = (a: int) -> MyStruct {
+    let x : MyStruct = (a, a)
+    x
+}
 
 fn Print = (s : MyStruct) -> () {
     printf("a: %d, b: %d\n", s.a, s.b)
@@ -23,8 +29,39 @@ fn AddTwoNumbers = (a: int, b: int) -> int {
     a + b
 }
 
+// fn ForEachImpl<In, Out> = (a : Array(In), func: (x: In) -> Out, cur_idx: u64) -> () {
+//     if (cur_idx < array::GetSize(a)) {
+//         func(a[cur_idx]) 
+//         func(array::Get(a, cur_idx)) 
+//         ForEachImpl(a, func, cur_idx + 1)
+//     }
+// }
+
+// TOOOO compilcated
+// let ForEachImpl = (In: type, Out: type) ->  
+//                      ((a : Array(In), func: (x: In) -> Out, cur_idx: u64) -> ()) 
+// { 
+//     (a : Array(In), func: (x: In) -> Out, cur_idx: u64) -> () 
+//     {
+//         if (cur_idx < array::GetSize(a)) {
+//             func(a[cur_idx]) 
+//             func(array::Get(a, cur_idx)) 
+//             ForEachImpl(a, func, cur_idx + 1)
+//         }
+//     }
+// }
+
+//fn ForEach = (a : Array<i32>, func: (x: i32) -> String) -> () 
+//{
+//    ForEachImpl(a, func, 0)
+//}
+
 // First going to get returning from functions working...
 // Then going to make structs work?
+
+//type Array_Int = (
+//    data : cexpr 'char *'
+//)
 
 fn main = () -> int {
     let x = "hello world"
@@ -35,6 +72,13 @@ fn main = () -> int {
     PrintInt(y.a)
     let z = AddTwoNumbers(5, 6) 
     PrintInt(z)
+    Print(CreateOnStack(12))
+
+//    let foo : Array<i32> = ()
+//
+//    ForEach(foo, (a : i32) -> () {
+//        printf("%d", a)
+//    })
 
     printf("%s\n", x)
     0
